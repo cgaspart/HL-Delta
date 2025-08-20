@@ -172,6 +172,10 @@ The system targets a 70/30 spot-to-perp allocation ratio for optimal capital eff
 - API-based control and monitoring
 - Automatic detection of best funding opportunities
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=cgaspart/HL-Delta&type=Date)](https://www.star-history.com/#cgaspart/HL-Delta&Date)
+
 ## License
 
 MIT License
