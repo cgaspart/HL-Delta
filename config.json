@@ -2,7 +2,7 @@
   "general": {
     "debug": false,
     "tracked_coins": ["BTC", "ETH", "HYPE", "USDC"],
-    "autostart": true
+    "autostart": false
   },
   "allocation": {
     "spot_pct": 70,

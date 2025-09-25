@@ -886,7 +886,7 @@ class Delta:
         
         ratio = self.spot_perp_repartition()
         ratio_color = Colors.GREEN if 0.665 <= ratio <= 0.735 else Colors.YELLOW if 0.6 <= ratio <= 0.8 else Colors.RED
-        logger.info(f"  Spot Perp Repartition: {ratio_color}{ratio:.4f}{Colors.RESET} (target: {Colors.GREEN}0.7{Colors.RESET})")
+        logger.info(f"Spot Perp Repartition: {ratio_color}{ratio:.4f}{Colors.RESET} (target: {Colors.GREEN}0.7{Colors.RESET})")
         
         allocation_ok = self.check_allocation()
         if allocation_ok == False:

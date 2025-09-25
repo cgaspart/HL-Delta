@@ -63,17 +63,19 @@ Configuration sections:
   - `port`: Port for the API server
   - `enabled`: Whether the API server is enabled
 
-### 2. **Environment Variables** - Required for Authentication
+### 2. **Environment Variables** - Required for Authentication and API Security
 
-These environment variables are used for authentication with HyperLiquid and must be set:
+These environment variables are used for authentication with HyperLiquid and for securing the bot's API. They must be set in your environment or in a `.env` file.
 
-- `HYPERLIQUID_PRIVATE_KEY`: Your private key for trading on HyperLiquid
-- `HYPERLIQUID_ADDRESS`: Your Ethereum address for HyperLiquid
+- `HYPERLIQUID_PRIVATE_KEY`: Your private key for trading on HyperLiquid.
+- `HYPERLIQUID_ADDRESS`: Your Ethereum address for HyperLiquid.
+- `API_SECRET_KEY`: A secret key of your choice to protect the bot's API endpoints. The frontend must use this same key to authenticate.
 
 Example using environment variables:
 ```bash
 export HYPERLIQUID_PRIVATE_KEY={PRIVATE_KEY}
 export HYPERLIQUID_ADDRESS={SUB_ACCOUNT_TRADING_ADDRESS}
+export API_SECRET_KEY={YOUR_SECRET_KEY}
 ```
 
 ## Quick Start
@@ -85,6 +87,29 @@ export HYPERLIQUID_ADDRESS={SUB_ACCOUNT_TRADING_ADDRESS}
 ```bash
 python example.py
 ```
+- The system checks the `autostart` setting in `config.json`. If set to `true` (the default), the bot will automatically start trading.
+
+## Once started, the system enters the main monitoring loop:
+- **Periodic checks:** Every 60 seconds (configurable), the bot checks for opportunities.
+- **Funding Rate Monitoring:** At the 50th minute of each hour, it monitors funding rates.
+- **Automatic Order Condition:** When an opportunity with an annualized yield of ≥ 5% is found, it automatically creates a delta-neutral position.
+
+## The system automatically performs the following actions:
+- **Position Creation:** Simultaneously buys spot and shorts perpetual contracts.
+- **Position Switching:** If the current position's yield drops below 5% and a better opportunity is available, it closes the old position and opens a new one.
+- **Order Tracking:** Automatically monitors order execution status.
+
+**Note 1:** If you prefer manual control, set `autostart` to `false` in `config.json`. You can then start and stop the bot using API endpoints.
+
+**Note 2:** When `autostart` is `false`, the backend service and API server will run, but the bot's core trading logic will remain in a "standby" state. The log message `Call start() manually to begin.` indicates that you need to trigger the bot via the API.
+
+   1. Start the backend service: `python entrypoint.py`.
+   2. Start the frontend service: `cd frontend && npm start`.
+   3. Open your browser to `http://localhost:3000`.
+   4. In the "Account Overview" section on the dashboard, click the green "Start" button.
+
+Clicking "Start" sends a `POST` request to the `/api/bot/start` endpoint, which calls the `start()` function and activates the bot's trading logic.
+
 5. Start the bot:
 ```bash
 python Delta.py
@@ -138,6 +163,18 @@ docker run -d \
   --env-file .env \
   hypervault-tradingbot:delta-1.0.0
 ```
+
+## Frontend UI for Bot Monitoring
+
+This project includes a frontend UI to help you track the bot's performance more easily.
+
+- First, open a new terminal and run `python entrypoint.py` to start the backend (must be running on `localhost:8080`).
+- Next, open another terminal, navigate to the `frontend` directory, and run `npm start` (the URL is typically `http://localhost:3000`).
+- To connect the frontend to the API, create a `.env` file inside the `frontend` directory. This file must contain the API key that matches the `API_SECRET_KEY` used by the backend.
+  ```
+  REACT_APP_API_KEY=your_secret_key
+  ```
+  Replace `your_secret_key` with the same value you set for `API_SECRET_KEY` in the backend environment.
 
 ## The HyperVault Trading Ecosystem (Coming Soon!)
 

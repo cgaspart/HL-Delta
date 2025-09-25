@@ -3,6 +3,7 @@ Bot control routes for the Delta bot API.
 """
 
 import logging
+import asyncio
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
@@ -23,19 +24,18 @@ class BotResponse(BaseModel):
 
 @router.post("/start")
 async def start_bot():
-    """Start the bot's trading operations."""
+    """Start the bot's main trading loop as a background task."""
     if not bot:
         raise HTTPException(status_code=500, detail="Bot instance not initialized")
     
     try:
-        # Start the bot's execution
         if hasattr(bot, 'start') and not bot._is_running:
-            # Starting outside of main to avoid blocking
-            await bot.execute_best_delta_strategy()
+            # Run the main loop as a background task so the API call can return immediately
+            asyncio.create_task(bot.start())
             
             return BotResponse(
                 success=True,
-                message="Bot started successfully"
+                message="Bot started successfully and is running in the background."
             )
         else:
             return BotResponse(
@@ -125,4 +125,19 @@ async def get_bot_state():
         )
     except Exception as e:
         logger.error(f"Error getting bot state: {e}")
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/shutdown")
+async def shutdown_bot():
+    """Triggers a graceful shutdown of the entire bot backend."""
+    logger.info("Shutdown endpoint called. Triggering graceful shutdown.")
+    
+    # Send a SIGTERM signal to the current process to trigger the graceful shutdown
+    import os
+    import signal
+    os.kill(os.getpid(), signal.SIGTERM)
+    
+    return BotResponse(
+        success=True,
+        message="Shutdown signal sent. The backend is shutting down."
+    )

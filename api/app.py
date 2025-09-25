@@ -6,15 +6,29 @@ import os
 import asyncio
 import logging
 import uvicorn
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from .utils.auth import verify_api_key
 from .routes import bot_routes, status_routes, config_routes
+from .websocket_manager import manager
 
 # Global instances
 app = FastAPI(title="Delta Bot API", description="API for controlling the Delta bot")
 server = None
+
+# Add a WebSocket endpoint for logs
+@app.websocket("/ws/logs")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Keep the connection alive
+            await websocket.receive_text()
+    except Exception:
+        manager.disconnect(websocket)
+
+
 bot_instance = None
 
 # Configure logging
