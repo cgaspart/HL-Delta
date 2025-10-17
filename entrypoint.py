@@ -7,24 +7,26 @@ for remote control and monitoring.
 """
 
 import os
+import sys
 import logging
 import asyncio
 import signal
-import sys
-import json
 from dotenv import load_dotenv
+
+# Add src to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 # Load environment variables first to get version info
 load_dotenv()
 
 # Bot version information
-__version__ = os.getenv("BOT_VERSION", "1.0.0")
+__version__ = os.getenv("BOT_VERSION", "2.0.0")
 BOT_NAME = "Delta"
 
 # Import the Delta bot
-from Delta import Delta
+from delta_bot import DeltaBot
 
-# Import API module (will be created later)
+# Import API module
 from api import start_api, stop_api
 from api.websocket_manager import WebSocketLogHandler, manager
 
@@ -82,7 +84,7 @@ async def main():
     logger.info(f"Initializing {BOT_NAME} bot v{__version__}...")
     
     # Create the Delta bot instance
-    delta_bot = Delta()
+    delta_bot = DeltaBot()
     
     # Get the current asyncio loop
     loop = asyncio.get_running_loop()
@@ -107,7 +109,7 @@ async def main():
         logger.warning("API server is disabled (either API_SECRET_KEY not set or API_ENABLED=false)")
     
     # Check the autostart setting from the configuration loaded by the bot
-    autostart_from_config = delta_bot.config.get("general", {}).get("autostart", True)
+    autostart_from_config = delta_bot.config.get("general", "autostart", default=False)
 
     if autostart_from_config:
         logger.info(f"Autostarting {BOT_NAME} based on config.json...")
