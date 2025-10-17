@@ -53,8 +53,9 @@ async def stop_bot():
         raise HTTPException(status_code=500, detail="Bot instance not initialized")
     
     try:
-        # Stop the bot but keep the API running
-        await bot.close_all_delta_positions()
+        # Stop the bot and close all positions
+        await bot.stop()
+        await bot.close_all_positions()
         
         return BotResponse(
             success=True,
@@ -75,8 +76,8 @@ async def close_position(coin: str):
         if coin not in bot.tracked_coins:
             raise HTTPException(status_code=400, detail=f"Invalid coin: {coin}")
         
-        # Close the position
-        result = await bot.close_delta_position(coin)
+        # Close the position (positions manager method is synchronous)
+        result = bot.positions.close_delta_position(coin)
         
         return BotResponse(
             success=True,
@@ -98,8 +99,8 @@ async def create_position(coin: str):
         if coin not in bot.tracked_coins:
             raise HTTPException(status_code=400, detail=f"Invalid coin: {coin}")
         
-        # Create the position
-        result = await bot.create_delta_position(coin)
+        # Create the position (positions manager method is async)
+        result = await bot.positions.create_delta_position(coin)
         
         return BotResponse(
             success=True,

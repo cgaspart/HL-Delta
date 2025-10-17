@@ -172,3 +172,13 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Project specific
+delta.log
+*.log
+.DS_Store
+.env
+myenv/
+
+# V1 archive (keep in git for reference)
+# archive/

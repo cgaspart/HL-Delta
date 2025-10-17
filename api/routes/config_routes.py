@@ -29,16 +29,25 @@ async def get_config():
         raise HTTPException(status_code=500, detail="Bot instance not initialized")
     
     try:
-        # Return the current configuration
-        config = {}
+        # Get full configuration from ConfigManager
+        full_config = {}
+        if hasattr(bot, 'config') and hasattr(bot.config, 'to_dict'):
+            full_config = bot.config.to_dict()
         
-        # Only return serializable configuration
-        if hasattr(bot, 'config'):
-            config = bot.config.copy()
-            
-        # Additional configuration from the bot (excluding private keys)
-        if hasattr(bot, 'tracked_coins'):
-            config['tracked_coins'] = bot.tracked_coins
+        # Create a flattened config for frontend consumption
+        config = {
+            # Runtime tracked_coins (may differ from config file)
+            "tracked_coins": bot.tracked_coins if hasattr(bot, 'tracked_coins') else [],
+            # Include other useful config values
+            "debug": full_config.get("general", {}).get("debug", False),
+            "autostart": full_config.get("general", {}).get("autostart", True),
+            "spot_pct": full_config.get("allocation", {}).get("spot_pct", 70),
+            "perp_pct": full_config.get("allocation", {}).get("perp_pct", 30),
+            "rebalance_threshold": full_config.get("allocation", {}).get("rebalance_threshold", 0.05),
+            "refresh_interval_sec": full_config.get("trading", {}).get("refresh_interval_sec", 60),
+            # Include full config for reference
+            "full_config": full_config
+        }
         
         return ConfigResponse(
             success=True,
@@ -58,22 +67,28 @@ async def update_config(
         raise HTTPException(status_code=500, detail="Bot instance not initialized")
     
     try:
+        updated_keys = []
+        
         # Validate the updates
         for key, value in updates.items():
-            # Don't update the private key
-            if key == "private_key" or key == "address":
+            # Don't update the private key or address
+            if key in ["private_key", "address"]:
                 continue
             
             # Apply the update
             if key == "tracked_coins" and isinstance(value, list):
                 bot.tracked_coins = value
-            elif hasattr(bot, 'config') and isinstance(bot.config, dict):
-                bot.config[key] = value
+                updated_keys.append(key)
+            elif hasattr(bot, 'config') and hasattr(bot.config, 'config'):
+                # Update the internal config dictionary
+                if key in bot.config.config:
+                    bot.config.config[key] = value
+                    updated_keys.append(key)
         
         return ConfigResponse(
             success=True,
             message="Configuration updated successfully",
-            data={"updated_keys": [k for k in updates.keys() if k not in ["private_key", "address"]]}
+            data={"updated_keys": updated_keys}
         )
     except Exception as e:
         logger.error(f"Error updating configuration: {e}")
